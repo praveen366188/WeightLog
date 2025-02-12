@@ -8,6 +8,8 @@ const dateInput = document.getElementById("dateInput") as HTMLInputElement;
 const weightInput = document.getElementById("weightInput") as HTMLInputElement;
 const logWeightBtn = document.getElementById("logWeight") as HTMLButtonElement;
 const weightTableBody = document.getElementById("weightTableBody") as HTMLTableSectionElement;
+const exportPDFBtn = document.getElementById("exportPDF") as HTMLButtonElement;
+declare var html2pdf: any;
 
 // Set default date to today and restrict future dates
 const today = new Date();
@@ -49,11 +51,6 @@ logWeightBtn.addEventListener("click", () => {
     // Sort by date (newest first)
     weightData.sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
 
-    // // Keep only the last 42 entries
-    // if (weightData.length > 42) {
-    //     weightData.shift();
-    // }
-
     // Save back to localStorage
     localStorage.setItem("weights", JSON.stringify(weightData));
 
@@ -61,7 +58,6 @@ logWeightBtn.addEventListener("click", () => {
     displayWeights();
     weightInput.value = "";
 });
-
 
 // Function to format date as DD-MM-YY
 function formatDate(date: Date): string {
@@ -98,6 +94,23 @@ function displayWeights() {
     });
 }
 
-
 // Load previous data on page load
 document.addEventListener("DOMContentLoaded", displayWeights);
+
+// Export to PDF functionality using html2pdf.js
+exportPDFBtn.addEventListener("click", () => {
+    const element = document.getElementById("exportContainer") as HTMLElement;
+    if (!element) {
+        console.error("exportContainer element not found.");
+        alert("Export container not found.");
+        return;
+    }
+    const opt = {
+        margin: 0.5,
+        filename: 'weight_history.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+});
