@@ -3,7 +3,6 @@ interface WeightEntry {
     weight: number;
 }
 
-// Select elements
 const dateInput = document.getElementById("dateInput") as HTMLInputElement;
 const weightInput = document.getElementById("weightInput") as HTMLInputElement;
 const logWeightBtn = document.getElementById("logWeight") as HTMLButtonElement;
