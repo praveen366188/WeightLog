@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "outDir": "./src/js",
+    "rootDir": "./src/ts",
+    "strict": true,
+    "lib": ["es2017", "dom"]
+  }
+}
