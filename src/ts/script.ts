@@ -85,7 +85,6 @@ function displayWeights() {
         dateCell.textContent = entry.date;
 
         const weightCell = document.createElement("td");
-        // Use toFixed(2) to always display two decimals
         weightCell.textContent = `${Number(entry.weight).toFixed(2)} kg`;
 
         row.appendChild(dateCell);
@@ -97,7 +96,7 @@ function displayWeights() {
 // Load previous data on page load
 document.addEventListener("DOMContentLoaded", displayWeights);
 
-// PDF Export Function (Supports iOS Safari & Chrome)
+// PDF Export Function (Works on iOS Safari & Chrome)
 exportPDFBtn.addEventListener("click", () => {
     const element = document.getElementById("exportContainer");
     if (!element) {
@@ -120,21 +119,27 @@ exportPDFBtn.addEventListener("click", () => {
         .then((pdfBlob: Blob) => {
             const blobURL = URL.createObjectURL(pdfBlob);
 
-            // Create a hidden download link
-            const downloadLink = document.createElement("a");
-            downloadLink.href = blobURL;
-            downloadLink.download = "weight_history.pdf";
-            document.body.appendChild(downloadLink);
+            // Detect iOS (Safari & Chrome)
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-            // Simulate a user click
-            downloadLink.click();
+            if (isIOS) {
+                // iOS Fix: Open in new tab
+                window.open(blobURL, "_blank");
+            } else {
+                // Normal download for other devices
+                const downloadLink = document.createElement("a");
+                downloadLink.href = blobURL;
+                downloadLink.download = "weight_history.pdf";
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }
 
-            // Cleanup: remove link after download
-            document.body.removeChild(downloadLink);
+            // Cleanup
             URL.revokeObjectURL(blobURL);
         })
         .catch((err: Error) => {
-            console.error("Error generating PDF:", err);
+            console.error("Error generating PDF:", err.message);
         });
 });
 
