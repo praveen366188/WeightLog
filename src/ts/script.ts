@@ -1,21 +1,58 @@
-interface WeightEntry {
-    date: string; // Formatted as DD-MM-YY
-    weight: number;
+// Define the structure for weight entries
+class WeightEntry {
+    constructor(date, weight) {
+        this.date = date;
+        this.weight = weight;
+    }
 }
 
 // Select elements
-const dateInput = document.getElementById("dateInput") as HTMLInputElement;
-const weightInput = document.getElementById("weightInput") as HTMLInputElement;
-const logWeightBtn = document.getElementById("logWeight") as HTMLButtonElement;
-const weightTableBody = document.getElementById("weightTableBody") as HTMLTableSectionElement;
-const exportPDFBtn = document.getElementById("exportPDF") as HTMLButtonElement;
-declare var html2pdf: any;
+const dateInput = document.getElementById("dateInput");
+const weightInput = document.getElementById("weightInput");
+const logWeightBtn = document.getElementById("logWeight");
+const weightTableBody = document.getElementById("weightTableBody");
+const exportPDFBtn = document.getElementById("exportPDF");
 
 // Set default date to today and restrict future dates
 const today = new Date();
 dateInput.valueAsDate = today;
 dateInput.setAttribute("max", today.toISOString().split("T")[0]); // Prevent future dates
 
+// Function to format date as DD-MM-YY
+function formatDate(date) {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}-${month}-${year}`;
+}
+
+// Function to parse date from DD-MM-YY format
+function parseDate(dateStr) {
+    const [day, month, year] = dateStr.split("-").map(Number);
+    return new Date(2000 + year, month - 1, day);
+}
+
+// Function to display weight history in the table
+function displayWeights() {
+    const weightData = JSON.parse(localStorage.getItem("weights") || "[]");
+    weightTableBody.innerHTML = "";
+
+    weightData.forEach((entry) => {
+        const row = document.createElement("tr");
+
+        const dateCell = document.createElement("td");
+        dateCell.textContent = entry.date;
+
+        const weightCell = document.createElement("td");
+        weightCell.textContent = `${Number(entry.weight).toFixed(2)} kg`;
+
+        row.appendChild(dateCell);
+        row.appendChild(weightCell);
+        weightTableBody.appendChild(row);
+    });
+}
+
+// Event listener to log weight
 logWeightBtn.addEventListener("click", () => {
     const weight = parseFloat(weightInput.value);
     const selectedDate = new Date(dateInput.value);
@@ -30,76 +67,29 @@ logWeightBtn.addEventListener("click", () => {
         return;
     }
 
-    // Round weight to two decimal places
     const roundedWeight = parseFloat(weight.toFixed(2));
-
-    // Format date as DD-MM-YY
     const formattedDate = formatDate(selectedDate);
 
-    // Create a new entry with the rounded weight
-    const entry: WeightEntry = { date: formattedDate, weight: roundedWeight };
+    let weightData = JSON.parse(localStorage.getItem("weights") || "[]");
 
-    // Fetch existing data
-    let weightData: WeightEntry[] = JSON.parse(localStorage.getItem("weights") || "[]");
-
-    // Remove any existing entry for the same date (prevent duplicates)
+    // Remove existing entry for the same date (to prevent duplicates)
     weightData = weightData.filter(item => item.date !== formattedDate);
 
-    // Add new entry
-    weightData.push(entry);
+    // Add new entry and sort by date (newest first)
+    weightData.push(new WeightEntry(formattedDate, roundedWeight));
+    weightData.sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
-    // Sort by date (newest first)
-    weightData.sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
-
-    // Save back to localStorage
+    // Save data to localStorage
     localStorage.setItem("weights", JSON.stringify(weightData));
 
-    // Update UI
+    // Update the UI
     displayWeights();
     weightInput.value = "";
 });
 
-// Function to format date as DD-MM-YY
-function formatDate(date: Date): string {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = String(date.getFullYear()).slice(-2); // Get last two digits of year
-    return `${day}-${month}-${year}`;
-}
-
-// Function to parse date from DD-MM-YY to Date object
-function parseDate(dateStr: string): Date {
-    const [day, month, year] = dateStr.split("-").map(Number);
-    return new Date(2000 + year, month - 1, day); // Convert 2-digit year to 4-digit
-}
-
-// Function to display weight history in table
-function displayWeights() {
-    const weightData: WeightEntry[] = JSON.parse(localStorage.getItem("weights") || "[]");
-    weightTableBody.innerHTML = "";
-
-    weightData.forEach((entry) => {
-        const row = document.createElement("tr");
-
-        const dateCell = document.createElement("td");
-        dateCell.textContent = entry.date;
-
-        const weightCell = document.createElement("td");
-        // Use toFixed(2) to always display two decimals
-        weightCell.textContent = `${Number(entry.weight).toFixed(2)} kg`;
-
-        row.appendChild(dateCell);
-        row.appendChild(weightCell);
-        weightTableBody.appendChild(row);
-    });
-}
-
-// Load previous data on page load
-document.addEventListener("DOMContentLoaded", displayWeights);
-
-// Export to PDF functionality using html2pdf.js
+// PDF Export Function (Supports iOS Safari & Chrome)
 exportPDFBtn.addEventListener("click", () => {
-    const element = document.getElementById("exportContainer") as HTMLElement;
+    const element = document.getElementById("exportContainer");
     if (!element) {
         console.error("exportContainer element not found.");
         return;
@@ -117,7 +107,7 @@ exportPDFBtn.addEventListener("click", () => {
         .set(opt)
         .from(element)
         .outputPdf('blob')
-        .then((pdfBlob: Blob) => {
+        .then((pdfBlob) => {
             const blobURL = URL.createObjectURL(pdfBlob);
 
             // Create a hidden download link
@@ -133,7 +123,10 @@ exportPDFBtn.addEventListener("click", () => {
             document.body.removeChild(downloadLink);
             URL.revokeObjectURL(blobURL);
         })
-        .catch((err: any) => {
+        .catch((err) => {
             console.error("Error generating PDF:", err);
         });
 });
+
+// Load previous data on page load
+document.addEventListener("DOMContentLoaded", displayWeights);
