@@ -98,7 +98,6 @@ function displayWeights() {
 document.addEventListener("DOMContentLoaded", displayWeights);
 
 // Export to PDF functionality using html2pdf.js
-
 exportPDFBtn.addEventListener("click", () => {
     const element = document.getElementById("exportContainer") as HTMLElement;
     if (!element) {
