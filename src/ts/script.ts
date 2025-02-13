@@ -98,13 +98,14 @@ function displayWeights() {
 document.addEventListener("DOMContentLoaded", displayWeights);
 
 // Export to PDF functionality using html2pdf.js
+
 exportPDFBtn.addEventListener("click", () => {
     const element = document.getElementById("exportContainer") as HTMLElement;
     if (!element) {
         console.error("exportContainer element not found.");
-        alert("Export container not found.");
         return;
     }
+
     const opt = {
         margin: 0.5,
         filename: 'weight_history.pdf',
@@ -112,5 +113,28 @@ exportPDFBtn.addEventListener("click", () => {
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(element).save();
+
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .outputPdf('blob')
+        .then((pdfBlob: Blob) => {
+            const blobURL = URL.createObjectURL(pdfBlob);
+
+            // Create a hidden download link
+            const downloadLink = document.createElement("a");
+            downloadLink.href = blobURL;
+            downloadLink.download = "weight_history.pdf";
+            document.body.appendChild(downloadLink);
+
+            // Simulate a user click
+            downloadLink.click();
+
+            // Cleanup: remove link after download
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(blobURL);
+        })
+        .catch((err: any) => {
+            console.error("Error generating PDF:", err);
+        });
 });
