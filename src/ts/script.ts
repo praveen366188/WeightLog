@@ -142,29 +142,6 @@ exportPDFBtn.addEventListener("click", () => {
             console.error("Error generating PDF:", err.message);
         });
 });
-const exportJSONBtn = document.getElementById("exportJSON") as HTMLButtonElement;
-
-exportJSONBtn.addEventListener("click", () => {
-    const weightData: WeightEntry[] = JSON.parse(localStorage.getItem("weights") || "[]");
-
-    if (weightData.length === 0) {
-        alert("No data to export.");
-        return;
-    }
-
-    const jsonString = JSON.stringify(weightData, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const blobURL = URL.createObjectURL(blob);
-
-    const downloadLink = document.createElement("a");
-    downloadLink.href = blobURL;
-    downloadLink.download = "weight_history.json";
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-
-    URL.revokeObjectURL(blobURL);
-});
 
 // Load previous data on page load
 document.addEventListener("DOMContentLoaded", displayWeights);

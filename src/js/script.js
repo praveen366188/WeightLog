@@ -4,6 +4,7 @@ const dateInput = document.getElementById("dateInput");
 const weightInput = document.getElementById("weightInput");
 const logWeightBtn = document.getElementById("logWeight");
 const weightTableBody = document.getElementById("weightTableBody");
+const exportPDFBtn = document.getElementById("exportPDF");
 // Set default date to today and restrict future dates
 const today = new Date();
 dateInput.valueAsDate = today;
@@ -33,10 +34,6 @@ logWeightBtn.addEventListener("click", () => {
     weightData.push(entry);
     // Sort by date (newest first)
     weightData.sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
-    // // Keep only the last 42 entries
-    // if (weightData.length > 42) {
-    //     weightData.shift();
-    // }
     // Save back to localStorage
     localStorage.setItem("weights", JSON.stringify(weightData));
     // Update UI
@@ -64,12 +61,55 @@ function displayWeights() {
         const dateCell = document.createElement("td");
         dateCell.textContent = entry.date;
         const weightCell = document.createElement("td");
-        // Use toFixed(2) to always display two decimals
         weightCell.textContent = `${Number(entry.weight).toFixed(2)} kg`;
         row.appendChild(dateCell);
         row.appendChild(weightCell);
         weightTableBody.appendChild(row);
     });
 }
+// Load previous data on page load
+document.addEventListener("DOMContentLoaded", displayWeights);
+// PDF Export Function (Works on iOS Safari & Chrome)
+exportPDFBtn.addEventListener("click", () => {
+    const element = document.getElementById("exportContainer");
+    if (!element) {
+        console.error("exportContainer element not found.");
+        return;
+    }
+    const opt = {
+        margin: 0.5,
+        filename: 'weight_history.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .outputPdf('blob')
+        .then((pdfBlob) => {
+        const blobURL = URL.createObjectURL(pdfBlob);
+        // Detect iOS (Safari & Chrome)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+            // iOS Fix: Open in new tab
+            window.open(blobURL, "_blank");
+        }
+        else {
+            // Normal download for other devices
+            const downloadLink = document.createElement("a");
+            downloadLink.href = blobURL;
+            downloadLink.download = "weight_history.pdf";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+        // Cleanup
+        URL.revokeObjectURL(blobURL);
+    })
+        .catch((err) => {
+        console.error("Error generating PDF:", err.message);
+    });
+});
 // Load previous data on page load
 document.addEventListener("DOMContentLoaded", displayWeights);
